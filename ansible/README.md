@@ -1,5 +1,3 @@
-
-```markdown
 # 🤖 Deploy e Configuração (Ansible)
 
 Playbooks para instalar e configurar:

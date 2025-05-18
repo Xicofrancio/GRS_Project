@@ -1,4 +1,3 @@
-```markdown
 # 🚦 Pipelines CI/CD
 
 Definições de pipeline para Jenkins ou GoCD:

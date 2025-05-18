@@ -1,4 +1,3 @@
-```markdown
 # 📊 Monitorização (Opcional)
 
 Configura Prometheus + Grafana para vigiar:

@@ -1,4 +1,3 @@
-```markdown
 # 🎛️ Configurações Bacula
 
 Aqui estão os ficheiros de config padrão:

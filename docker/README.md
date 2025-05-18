@@ -1,4 +1,3 @@
-```markdown
 # 🐳 Docker Compose & App Demo
 
 Absolutamente tudo para levantar o teu ambiente full-stack.
