@@ -12,3 +12,4 @@ Definições de pipeline para Jenkins ou GoCD:
 ### Exemplo Jenkinsfile
 
 Veja [Jenkinsfile](Jenkinsfile) para detalhes.
+
