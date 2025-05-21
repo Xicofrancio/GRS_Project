@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Demo Backup App</title>
+</head>
+<body>
+  <h1>🎉 Ambiente Demo Full-Stack</h1>
+  <p>Teste de backup e restore!</p>
+  <button onclick="fetch('/api/health').then(r => r.json()).then(d => alert(JSON.stringify(d)))">
+    Testar API
+  </button>
+</body>
+</html>

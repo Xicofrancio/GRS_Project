@@ -1,0 +1,52 @@
+# ─── Node.js / Demo App ───────────────────────────────────────────────────────────
+/docker/app/node_modules/
+/docker/app/npm-debug.log*
+/docker/app/yarn-debug.log*
+/docker/app/yarn-error.log*
+/docker/app/.env*
+
+# ─── Bacula Catalog / Data Volumes ───────────────────────────────────────────────
+/docker/app/pgdata/
+/docker/app/backup_data/
+/docker/app/bacula-dir-data/
+/docker/app/bacula-dir-run/
+/docker/app/bacula-dir-log/
+
+# ─── Postgres Demo DB ────────────────────────────────────────────────────────────
+/docker/app/db_data/
+
+# ─── MinIO Storage ───────────────────────────────────────────────────────────────
+/docker/app/minio_data/
+
+# ─── Terraform / Ansible / CI ────────────────────────────────────────────────────
+/infra/.terraform/
+/ansible/.vagrant/
+/ci/.terraform/
+
+# ─── Monitoring / Logs / Temp ────────────────────────────────────────────────────
+*.log
+*.tmp
+*.cache
+*.pid
+*.sock
+*.cache/
+.monitoring/
+
+# ─── Python / Ansible Cache ───────────────────────────────────────────────────────
+**/__pycache__/
+**/.pytest_cache/
+**/*.py[cod]
+**/*$py.class
+
+# ─── Editor / IDE ────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# ─── OS Files ────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini

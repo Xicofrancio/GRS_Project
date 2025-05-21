@@ -16,3 +16,5 @@ terraform apply  # cria o bucket
 
 Never edit bucket manually only via terraform
 
+
+

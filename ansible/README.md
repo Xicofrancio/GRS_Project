@@ -2,7 +2,7 @@
 
 Playbooks para instalar e configurar:
 
-- **Bacula File Daemon** (cliente)  
+- **Bacula File Daemon** (cliente)
 - **Vault Agent** para injeção de segredos  
 - Templates de configuração em `/ansible/roles`
 

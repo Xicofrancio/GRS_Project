@@ -1,0 +1,98 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app                       # mount live code para dev rápido
+    environment:
+      - NODE_ENV=development
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: demo
+      POSTGRES_USER: demo
+      POSTGRES_PASSWORD: demopass
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  storage:
+    image: minio/minio:latest
+    command: >
+      server /data
+      --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio123
+      MINIO_BROWSER: "on"                  # força UI ligada
+      MINIO_CONSOLE_ADDRESS: ":9001"       # flag extra, dependendo da versão
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # Web Console
+
+  catalog-db:
+    image: postgres:15          # reuse Postgres for Bacula catalog
+    environment:
+      POSTGRES_DB: bacula
+      POSTGRES_USER: bacula
+      POSTGRES_PASSWORD: bacula
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    # no host port exposed if only Bacula uses it
+    healthcheck:
+      test: ["CMD-SHELL","pg_isready -U bacula -d bacula"]
+      interval: 5s
+      retries: 5
+
+  bacula-dir:
+    image: fametec/bacula-director:11.0.5
+    depends_on:
+      - catalog-db             # wait for Postgres catalog :contentReference[oaicite:5]{index=5}
+    volumes:
+      - ../../bacula/bacula-dir.conf:/opt/bacula/etc/bacula-dir.conf:ro
+      - ../../bacula/bconsole.conf:/opt/bacula/etc/bconsole.conf:ro
+      - bacula-dir-data:/var/lib/bacula
+      - bacula-dir-run:/var/run/bacula           # ← novo volume para PidDirectory
+      - bacula-dir-log:/var/log/bacula 
+      #- ../../bacula/bconsole.conf:/opt/bacula/etc/bconsole.conf:ro
+    ports:
+      - "9101:9101"            # Director API :contentReference[oaicite:6]{index=6}
+
+  bacula-sd:
+    image: fametec/bacula-storage:11.0.5
+    depends_on:
+      - bacula-dir             # wait for Director :contentReference[oaicite:7]{index=7}
+    volumes:
+      - ../../bacula/bacula-sd.conf:/opt/bacula/etc/bacula-sd.conf:ro
+      - backup_data:/opt/bacula/backup  # writes into MinIO volume :contentReference[oaicite:8]{index=8}
+    ports:
+      - "9103:9103"
+
+  bacula-fd:
+    image: fametec/bacula-client:11.0.5
+    depends_on:
+      - bacula-sd
+      - bacula-dir
+    volumes:
+      - ../../bacula/bacula-fd.conf:/opt/bacula/etc/bacula-fd.conf:ro
+      - ./:/data               # backs up your demo app & DB dumps :contentReference[oaicite:9]{index=9}
+    ports:
+      - "9102:9102"
+
+volumes:
+  db_data:
+  minio_data:
+  pgdata:
+  backup_data:
+  bacula-dir-data:
+  bacula-dir-run:      
+  bacula-dir-log:               

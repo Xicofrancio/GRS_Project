@@ -1,7 +1,5 @@
 # 🚀 Backup Lab Demo
 
-Bem-vindo ao **Backup Lab Demo**, o teu ambiente de testes completo para aprender a fazer backup e restore de um sistema full-stack simulado. Aqui vais:
-
 - 🚢 Levantar uma aplicação Node.js + PostgreSQL + MinIO em Docker Compose  
 - 📦 Provisione um bucket S3 (ou MinIO) com Terraform  
 - 🤖 Instalar e configurar Bacula (Director, Storage, Client)  
