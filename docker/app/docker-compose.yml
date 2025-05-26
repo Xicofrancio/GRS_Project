@@ -8,7 +8,7 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - .:/app                       # mount live code para dev rápido
+      - .:/app
     environment:
       - NODE_ENV=development
 
@@ -31,68 +31,74 @@ services:
     environment:
       MINIO_ROOT_USER: minio
       MINIO_ROOT_PASSWORD: minio123
-      MINIO_BROWSER: "on"                  # força UI ligada
-      MINIO_CONSOLE_ADDRESS: ":9001"       # flag extra, dependendo da versão
+      MINIO_BROWSER: "on"
+      MINIO_CONSOLE_ADDRESS: ":9001"
     volumes:
       - minio_data:/data
     ports:
-      - "9000:9000"   # S3 API
-      - "9001:9001"   # Web Console
+      - "9000:9000"
+      - "9001:9001"
 
+  # Catálogo Bacula num Postgres dedicado
   catalog-db:
-    image: postgres:15          # reuse Postgres for Bacula catalog
+    image: postgres:15
     environment:
       POSTGRES_DB: bacula
       POSTGRES_USER: bacula
       POSTGRES_PASSWORD: bacula
     volumes:
       - pgdata:/var/lib/postgresql/data
-    # no host port exposed if only Bacula uses it
     healthcheck:
-      test: ["CMD-SHELL","pg_isready -U bacula -d bacula"]
+      test: ["CMD","pg_isready","-U","bacula","-d","bacula"]
       interval: 5s
       retries: 5
 
-  bacula-dir:
-    image: fametec/bacula-director:11.0.5
+  # Novo serviço: Bacula Server + Baculum
+  bacula-server:
+    image: pwa666/bacula-server:11-postgresql-latest
+    restart: unless-stopped
     depends_on:
-      - catalog-db             # wait for Postgres catalog :contentReference[oaicite:5]{index=5}
-    volumes:
-      - ../../bacula/bacula-dir.conf:/opt/bacula/etc/bacula-dir.conf:ro
-      - ../../bacula/bconsole.conf:/opt/bacula/etc/bconsole.conf:ro
-      - bacula-dir-data:/var/lib/bacula
-      - bacula-dir-run:/var/run/bacula           # ← novo volume para PidDirectory
-      - bacula-dir-log:/var/log/bacula 
-      #- ../../bacula/bconsole.conf:/opt/bacula/etc/bconsole.conf:ro
-    ports:
-      - "9101:9101"            # Director API :contentReference[oaicite:6]{index=6}
+      - catalog-db
+    environment:
+      ## Banco de dados Bacula (catálogo)
+      - DB_Host=catalog-db                # host do Postgres de catálogo :contentReference[oaicite:1]{index=1}
+      - DB_Port=5432
+      - DB_User=bacula
+      - DB_Password=bacula
 
-  bacula-sd:
-    image: fametec/bacula-storage:11.0.5
-    depends_on:
-      - bacula-dir             # wait for Director :contentReference[oaicite:7]{index=7}
-    volumes:
-      - ../../bacula/bacula-sd.conf:/opt/bacula/etc/bacula-sd.conf:ro
-      - backup_data:/opt/bacula/backup  # writes into MinIO volume :contentReference[oaicite:8]{index=8}
-    ports:
-      - "9103:9103"
+      ## Diretório de working e storage
+      - TZ=Europe/Lisbon
+      - SD_Host=storage                   # host onde o Storage Daemon atende :contentReference[oaicite:2]{index=2}
 
-  bacula-fd:
-    image: fametec/bacula-client:11.0.5
-    depends_on:
-      - bacula-sd
-      - bacula-dir
-    volumes:
-      - ../../bacula/bacula-fd.conf:/opt/bacula/etc/bacula-fd.conf:ro
-      - ./:/data               # backs up your demo app & DB dumps :contentReference[oaicite:9]{index=9}
+      ## Credenciais do Baculum (Web UI)
+      - WEB_User=admin
+      - WEB_Password=difficult
+
+      ## Notificações por email (opcional)
+      - EMAIL_Recipient=you@domain.com
+      - SMTP_Host=smtp.domain.com
+      - SMTP_Port=587
+      - SMTP_User=you@domain.com
+      - SMTP_Password=yourpassword
+
     ports:
-      - "9102:9102"
+      - "9101:9101"   # Director
+      - "9103:9103"   # Storage
+      - "9095:9095"   # Baculum Web UI :contentReference[oaicite:3]{index=3}
+      - "9096:9096"   # API
+    volumes:
+      - ../../bacula-server/conf/11/postgresql/bacula-dir.conf:/etc/bacula/bacula-dir.conf:ro
+      - ../../bacula-server/conf/11/postgresql/bacula-fd.conf:/etc/bacula/bacula-fd.conf:ro
+      - ../../bacula-server/conf/11/postgresql/bacula-sd.conf:/etc/bacula/bacula-sd.conf:ro
+      - ../../bacula-server/conf/bconsole.conf:/etc/bacula/bconsole.conf:ro
 
 volumes:
   db_data:
   minio_data:
   pgdata:
-  backup_data:
-  bacula-dir-data:
-  bacula-dir-run:      
-  bacula-dir-log:               
+  bacula-conf:
+  baculum-conf:
+  bacula-working:
+  bacula-storage:
+  bacula-log:
+  apache-log:
