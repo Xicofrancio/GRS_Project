@@ -68,7 +68,7 @@ services:
 
       ## Diretório de working e storage
       - TZ=Europe/Lisbon
-      - SD_Host=storage                   # host onde o Storage Daemon atende :contentReference[oaicite:2]{index=2}
+      - SD_Host=localhost                   # host onde o Storage Daemon atende
 
       ## Credenciais do Baculum (Web UI)
       - WEB_User=admin
@@ -83,14 +83,28 @@ services:
 
     ports:
       - "9101:9101"   # Director
-      - "9103:9103"   # Storage
-      - "9095:9095"   # Baculum Web UI :contentReference[oaicite:3]{index=3}
+      - "9103:9103"   # Storage      - "9095:9095"   # Baculum Web UI
       - "9096:9096"   # API
     volumes:
-      - ../../bacula-server/conf/11/postgresql/bacula-dir.conf:/etc/bacula/bacula-dir.conf:ro
-      - ../../bacula-server/conf/11/postgresql/bacula-fd.conf:/etc/bacula/bacula-fd.conf:ro
-      - ../../bacula-server/conf/11/postgresql/bacula-sd.conf:/etc/bacula/bacula-sd.conf:ro
-      - ../../bacula-server/conf/bconsole.conf:/etc/bacula/bconsole.conf:ro
+      - type: bind
+        source: ../../bacula-server/conf/11/postgresql/bacula-dir.conf
+        target: /etc/bacula/bacula-dir.conf
+        read_only: true
+      - type: bind
+        source: ../../bacula-server/conf/11/postgresql/bacula-fd.conf
+        target: /etc/bacula/bacula-fd.conf
+        read_only: true
+      - type: bind
+        source: ../../bacula-server/conf/11/postgresql/bacula-sd.conf
+        target: /etc/bacula/bacula-sd.conf
+        read_only: true
+      - type: bind
+        source: ../../bacula-server/conf/bconsole.conf
+        target: /etc/bacula/bconsole.conf
+        read_only: true
+      - type: volume
+        source: bacula-storage
+        target: /mnt/bacula
 
 volumes:
   db_data:
