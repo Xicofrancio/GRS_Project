@@ -72,7 +72,7 @@ services:
 
       ## Credenciais do Baculum (Web UI)
       - WEB_User=admin
-      - WEB_Password=difficult
+      - WEB_Password=admin
 
       ## Notificações por email (opcional)
       - EMAIL_Recipient=you@domain.com
@@ -82,10 +82,18 @@ services:
       - SMTP_Password=yourpassword
 
     ports:
-      - "9101:9101"   # Director
-      - "9103:9103"   # Storage      - "9095:9095"   # Baculum Web UI
-      - "9096:9096"   # API
+      - "9101:9101"   # Bacula Director
+      - "9102:9102"   # Bacula File Daemon
+      - "9103:9103"   # Bacula Storage Daemon
+      - "9095:80"     # Baculum Web UI (Changed to map to container's Apache port 80)
+      - "9096:9096"   # Baculum API
     volumes:
+      - bacula-conf:/etc/bacula
+      - baculum-conf:/etc/baculum
+      - bacula-working:/var/lib/bacula
+      - bacula-storage:/mnt/bacula
+      - bacula-log:/var/log/bacula
+      - apache-log:/var/log/apache2
       - type: bind
         source: ../../bacula-server/conf/11/postgresql/bacula-dir.conf
         target: /etc/bacula/bacula-dir.conf
@@ -105,6 +113,11 @@ services:
       - type: volume
         source: bacula-storage
         target: /mnt/bacula
+      - type: volume
+        source: minio_data
+        target: /minio_data
+        read_only: true
+      - minio_data:/minio_data:ro  # Mount MinIO data as read-only
 
 volumes:
   db_data:
