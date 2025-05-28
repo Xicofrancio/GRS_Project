@@ -63,6 +63,8 @@ Open [http://localhost:9095](http://localhost:9095)
 Login: `admin` / `difficult`
 Show the dashboard or job history.
 
+abrir minio em http://localhost:9001/browser e dizer que ainda nao está integrado mas posso criar bueckts onde vou dar store aos backups do bacula
+
 ---
 
 ## 5. What to Emphasize to Your Professor
