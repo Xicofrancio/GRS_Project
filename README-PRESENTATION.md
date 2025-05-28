@@ -7,7 +7,7 @@ This project demonstrates a full-stack environment with automated backup and res
 **Key Technologies:**
 - **Bacula**: Enterprise-grade backup and restore system
 - **Docker Compose**: Orchestrates multiple containers (web app, databases, storage, Bacula server)
-- **Node.js/Express**: Simple web app for demo purposes
+- **Node.js/Express**: Simple web app for demo purposes (not connected with bacula still)
 - **PowerShell & Bash scripts**: Automate backup/restore tests
 
 ---
