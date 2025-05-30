@@ -11,6 +11,9 @@ services:
       - .:/app
     environment:
       - NODE_ENV=development
+    depends_on:
+      - storage
+      - db
 
   db:
     image: postgres:15
@@ -52,23 +55,22 @@ services:
       test: ["CMD","pg_isready","-U","bacula","-d","bacula"]
       interval: 5s
       retries: 5
-
-  # Novo serviço: Bacula Server + Baculum
   bacula-server:
     image: pwa666/bacula-server:11-postgresql-latest
     restart: unless-stopped
     depends_on:
       - catalog-db
+      - storage
     environment:
       ## Banco de dados Bacula (catálogo)
-      - DB_Host=catalog-db                # host do Postgres de catálogo :contentReference[oaicite:1]{index=1}
+      - DB_Host=catalog-db
       - DB_Port=5432
       - DB_User=bacula
       - DB_Password=bacula
 
       ## Diretório de working e storage
       - TZ=Europe/Lisbon
-      - SD_Host=localhost                   # host onde o Storage Daemon atende
+      - SD_Host=localhost
 
       ## Credenciais do Baculum (Web UI)
       - WEB_User=admin
@@ -85,7 +87,7 @@ services:
       - "9101:9101"   # Bacula Director
       - "9102:9102"   # Bacula File Daemon
       - "9103:9103"   # Bacula Storage Daemon
-      - "9095:80"     # Baculum Web UI (Changed to map to container's Apache port 80)
+      - "9095:80"     # Baculum Web UI
       - "9096:9096"   # Baculum API
     volumes:
       - bacula-conf:/etc/bacula
@@ -94,6 +96,7 @@ services:
       - bacula-storage:/mnt/bacula
       - bacula-log:/var/log/bacula
       - apache-log:/var/log/apache2
+      - minio_data:/minio_data:ro  # Mount MinIO data as read-only for backup
       - type: bind
         source: ../../bacula-server/conf/11/postgresql/bacula-dir.conf
         target: /etc/bacula/bacula-dir.conf
@@ -110,14 +113,6 @@ services:
         source: ../../bacula-server/conf/bconsole.conf
         target: /etc/bacula/bconsole.conf
         read_only: true
-      - type: volume
-        source: bacula-storage
-        target: /mnt/bacula
-      - type: volume
-        source: minio_data
-        target: /minio_data
-        read_only: true
-      - minio_data:/minio_data:ro  # Mount MinIO data as read-only
 
 volumes:
   db_data:

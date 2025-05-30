@@ -100,17 +100,93 @@
       color: #721c24;
       border: 1px solid #f5c6cb;
     }
-    
-    .file-info {
+      .file-info {
       color: #666;
       font-size: 0.9em;
+    }
+    
+    .backup-controls {
+      margin-bottom: 20px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    
+    .backup-btn, .restore-btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    }
+    
+    .backup-btn {
+      background-color: #28a745;
+      color: white;
+    }
+    
+    .backup-btn:hover {
+      background-color: #218838;
+    }
+    
+    .restore-btn {
+      background-color: #007bff;
+      color: white;
+    }
+    
+    .restore-btn:hover {
+      background-color: #0056b3;
+    }
+    
+    .backup-status {
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 4px;
+      display: none;
+    }
+    
+    .backup-status.show {
+      display: block;
+    }
+    
+    .backup-status.success {
+      background-color: #d4edda;
+      border: 1px solid #c3e6cb;
+      color: #155724;
+    }
+    
+    .backup-status.loading {
+      background-color: #fff3cd;
+      border: 1px solid #ffeaa7;
+      color: #856404;
+    }
+    
+    .backup-status.error {
+      background-color: #f8d7da;
+      border: 1px solid #f5c6cb;
+      color: #721c24;
+    }
+    
+    .view-btn {
+      background-color: #6c757d;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 0.8em;
+      margin-left: 5px;
+    }
+    
+    .view-btn:hover {
+      background-color: #545b62;
     }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>🎉 Demo Full-Stack Environment</h1>
-    <p>Test your backup and restore functionality!</p>
     
     <div class="section">
       <h3>Upload File</h3>
@@ -119,10 +195,13 @@
         <button type="submit" id="uploadButton">Upload</button>
       </form>
       <div id="uploadProgress" class="upload-progress"></div>
-    </div>
-
-    <div class="section file-list">
+    </div>    <div class="section file-list">
       <h3>Files in Storage</h3>
+      <div class="backup-controls">
+        <button onclick="triggerBackup()" id="backupButton" class="backup-btn">🔄 Backup Now</button>
+        <button onclick="restoreFiles()" id="restoreButton" class="restore-btn">📥 Restore Files</button>
+      </div>
+      <div id="backupStatus" class="backup-status"></div>
       <div id="filesList"></div>
     </div>
 
@@ -189,8 +268,7 @@
         const response = await fetch('/api/files')
         const files = await response.json()
         const filesList = document.getElementById('filesList')
-        
-        if (!files.length) {
+          if (!files.length) {
           filesList.innerHTML = '<div class="file-item">No files uploaded yet</div>'
           return
         }
@@ -201,9 +279,12 @@
               <strong>${file.name}</strong>
               <div class="file-info">
                 Size: ${formatFileSize(file.size)} | 
-                Type: ${file.type || 'Unknown'} | 
                 Modified: ${new Date(file.lastModified).toLocaleString()}
               </div>
+            </div>
+            <div>
+              <button onclick="viewFile('${encodeURIComponent(file.name)}')" class="view-btn">👁️ View</button>
+              <button onclick="deleteFile('${encodeURIComponent(file.name)}')" style="background-color: #dc3545; margin-left: 10px;">🗑️ Delete</button>
             </div>
           </div>
         `).join('')
@@ -211,9 +292,7 @@
         console.error('Failed to load files:', err)
         showAlert('Failed to load files', 'error')
       }
-    }
-
-    // Health check
+    }    // Health check
     async function checkHealth() {
       const healthStatus = document.getElementById('healthStatus')
       try {
@@ -222,6 +301,211 @@
         showAlert(`API Status: ${data.status}`, 'success')
       } catch (err) {
         showAlert('Health check failed', 'error')
+      }
+    }    // Delete file
+    async function deleteFile(filename) {
+      if (!confirm(`Are you sure you want to delete ${decodeURIComponent(filename)}?`)) {
+        return
+      }
+      
+      try {
+        const response = await fetch(`/api/files/${filename}`, {
+          method: 'DELETE'
+        })
+        
+        const result = await response.json()
+        
+        if (!response.ok) {
+          throw new Error(result.error || 'Delete failed')
+        }
+        
+        showAlert('File deleted successfully!', 'success')
+        loadFiles()
+      } catch (err) {
+        showAlert(err.message || 'Delete failed', 'error')
+        console.error(err)
+      }
+    }
+
+    // Trigger backup
+    async function triggerBackup() {
+      const backupButton = document.getElementById('backupButton')
+      const backupStatus = document.getElementById('backupStatus')
+      
+      try {
+        backupButton.disabled = true
+        backupStatus.className = 'backup-status show loading'
+        backupStatus.textContent = '🔄 Starting backup process...'
+        
+        const response = await fetch('/api/backup', {
+          method: 'POST'
+        })
+        
+        const result = await response.json()
+        
+        if (!response.ok) {
+          throw new Error(result.error || 'Backup failed')
+        }
+        
+        backupStatus.className = 'backup-status show success'
+        backupStatus.textContent = `✅ Backup completed successfully! Job ID: ${result.jobId || 'N/A'}`
+        
+        setTimeout(() => {
+          backupStatus.className = 'backup-status'
+        }, 10000)
+        
+      } catch (err) {
+        backupStatus.className = 'backup-status show error'
+        backupStatus.textContent = `❌ Backup failed: ${err.message}`
+        console.error(err)
+        
+        setTimeout(() => {
+          backupStatus.className = 'backup-status'
+        }, 10000)
+      } finally {
+        backupButton.disabled = false
+      }
+    }
+
+    // Restore files
+    async function restoreFiles() {
+      if (!confirm('This will restore all backed up files. Continue?')) {
+        return
+      }
+      
+      const restoreButton = document.getElementById('restoreButton')
+      const backupStatus = document.getElementById('backupStatus')
+      
+      try {
+        restoreButton.disabled = true
+        backupStatus.className = 'backup-status show loading'
+        backupStatus.textContent = '📥 Restoring files from backup...'
+        
+        const response = await fetch('/api/restore', {
+          method: 'POST'
+        })
+        
+        const result = await response.json()
+        
+        if (!response.ok) {
+          throw new Error(result.error || 'Restore failed')
+        }
+        
+        backupStatus.className = 'backup-status show success'
+        backupStatus.textContent = `✅ Files restored successfully! ${result.filesRestored || 0} files restored.`
+        
+        // Reload files list to show restored files
+        setTimeout(() => {
+          loadFiles()
+          backupStatus.className = 'backup-status'
+        }, 3000)
+        
+      } catch (err) {
+        backupStatus.className = 'backup-status show error'
+        backupStatus.textContent = `❌ Restore failed: ${err.message}`
+        console.error(err)
+        
+        setTimeout(() => {
+          backupStatus.className = 'backup-status'
+        }, 10000)
+      } finally {
+        restoreButton.disabled = false
+      }
+    }
+
+    // View file content
+    async function viewFile(filename) {
+      try {
+        const response = await fetch(`/api/files/${filename}/view`)
+        
+        if (!response.ok) {
+          throw new Error('Failed to load file')
+        }
+        
+        const contentType = response.headers.get('content-type')
+        
+        if (contentType.includes('text/') || contentType.includes('application/json')) {
+          const content = await response.text()
+          showFileModal(filename, content, 'text')
+        } else if (contentType.includes('image/')) {
+          const blob = await response.blob()
+          const imageUrl = URL.createObjectURL(blob)
+          showFileModal(filename, imageUrl, 'image')
+        } else {
+          // For other file types, trigger download
+          const blob = await response.blob()
+          const url = URL.createObjectURL(blob)
+          const a = document.createElement('a')
+          a.href = url
+          a.download = decodeURIComponent(filename)
+          a.click()
+          URL.revokeObjectURL(url)
+        }
+      } catch (err) {
+        showAlert(`Failed to view file: ${err.message}`, 'error')
+        console.error(err)
+      }
+    }
+
+    // Show file content in modal
+    function showFileModal(filename, content, type) {
+      const modal = document.createElement('div')
+      modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+      `
+      
+      const modalContent = document.createElement('div')
+      modalContent.style.cssText = `
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        max-width: 90%;
+        max-height: 90%;
+        overflow: auto;
+        position: relative;
+      `
+      
+      const closeBtn = document.createElement('button')
+      closeBtn.innerHTML = '✕'
+      closeBtn.style.cssText = `
+        position: absolute;
+        top: 10px;
+        right: 15px;
+        background: none;
+        border: none;
+        font-size: 20px;
+        cursor: pointer;
+      `
+      closeBtn.onclick = () => modal.remove()
+      
+      const title = document.createElement('h3')
+      title.textContent = decodeURIComponent(filename)
+      title.style.marginTop = '0'
+      
+      const contentDiv = document.createElement('div')
+      if (type === 'text') {
+        contentDiv.innerHTML = `<pre style="white-space: pre-wrap; max-height: 400px; overflow-y: auto;">${content}</pre>`
+      } else if (type === 'image') {
+        contentDiv.innerHTML = `<img src="${content}" style="max-width: 100%; height: auto;" alt="${filename}">`
+      }
+      
+      modalContent.appendChild(closeBtn)
+      modalContent.appendChild(title)
+      modalContent.appendChild(contentDiv)
+      modal.appendChild(modalContent)
+      
+      document.body.appendChild(modal)
+      modal.onclick = (e) => {
+        if (e.target === modal) modal.remove()
       }
     }
 
