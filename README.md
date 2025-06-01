@@ -1,42 +1,66 @@
-# 🚀 Backup Lab Demo
+# 🚀 Backup Monitoring System
 
-- 🚢 Levantar uma aplicação Node.js + PostgreSQL + MinIO em Docker Compose  
-- 📦 Provisione um bucket S3 (ou MinIO) com Terraform  
-- 🤖 Instalar e configurar Bacula (Director, Storage, Client)  
-- 🔄 Testar teardown e restore automático  
-- 🔧 Automatizar testes com CI (Jenkins/GoCD)  
-- 📊 (Opcional) Monitorizar com Prometheus & Grafana
+A professional-grade backup monitoring system with comprehensive metrics, Prometheus integration, and Grafana dashboards.
 
----
+## 📁 Project Structure
 
-## 📂 Estrutura de Pastas
+```
+├── docker/
+│   └── app/
+│       ├── public/              # Web interface files
+│       ├── monitoring/          # Prometheus & Grafana configs
+│       ├── docker-compose.yml   # Container orchestration
+│       ├── Dockerfile          # Web app container build
+│       ├── index.js            # Main application code
+│       └── package.json        # Node.js dependencies
+├── bacula-server/             # Backup server configuration
+├── USER_GUIDE.md             # 📚 Complete documentation
+└── LICENSE                   # Project license
+```
 
-/infra/ ← Terraform (bucket S3/MinIO)
-/ansible/ ← Playbooks Ansible para Bacula & Vault
-/docker/ ← Docker Compose + app demo full-stack
-/bacula/ ← Configurações do Director, SD, FD
-/tests/ ← Scripts de teardown & restore
-/monitoring/ ← Prometheus & Grafana (opcional)
-/ci/ ← Pipelines Jenkins/GoCD
+## � Quick Start
 
----
+1. **Clone the repository**
+2. **Navigate to the app directory:**
+   ```bash
+   cd docker/app
+   ```
+3. **Start the system:**
+   ```bash
+   docker-compose up -d
+   ```
+4. **Access the interfaces:**
+   - Web App: http://localhost:3000
+   - Prometheus: http://localhost:9090
+   - Grafana: http://localhost:3001
 
-## 📋 Pré-requisitos
+## � Features
 
-- Docker & Docker Compose  
-- Terraform v1.x  
-- Ansible v2.9+  
-- (Opcional) Jenkins ou GoCD  
+- **40+ Backup-Specific Metrics**
+- **Real-time Monitoring**
+- **Professional Dashboards**
+- **File Backup & Restore**
+- **Performance Analytics**
 
----
+## 📚 Documentation
 
-## ▶️ Quickstart
+See [USER_GUIDE.md](USER_GUIDE.md) for complete documentation including:
+- Setup instructions
+- How to perform backups
+- Viewing metrics
+- Troubleshooting
+- System architecture
 
-1. `git clone <repo>`  
-2. `cd infra && terraform init && terraform apply`  
-3. `cd ../docker && docker-compose up -d --build`  
-4. Configura Bacula em `/bacula` (já montado)  
-5. `bash tests/teardown.sh && bash tests/restore.sh`  
-6. (Opcional) Dispara o pipeline em `/ci`
+## � System Requirements
 
----
+- Docker & Docker Compose
+- Available ports: 3000, 3001, 5432, 9000, 9001, 9090, 9095-9103
+- Modern web browser
+
+## 🤝 Contributing
+
+Contributions are welcome! Please read the contribution guidelines first.
+
+## 📝 License
+
+This project is licensed under the terms specified in the [LICENSE](LICENSE) file.

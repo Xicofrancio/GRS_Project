@@ -195,11 +195,25 @@
         <button type="submit" id="uploadButton">Upload</button>
       </form>
       <div id="uploadProgress" class="upload-progress"></div>
-    </div>    <div class="section file-list">
-      <h3>Files in Storage</h3>
+    </div>    <div class="section file-list">      <h3>Files in Storage & Backup Operations</h3>
       <div class="backup-controls">
-        <button onclick="triggerBackup()" id="backupButton" class="backup-btn">🔄 Backup Now</button>
-        <button onclick="restoreFiles()" id="restoreButton" class="restore-btn">📥 Restore Files</button>
+        <div style="margin-bottom: 10px;">
+          <label for="backupType">Backup Type:</label>
+          <select id="backupType" style="margin-left: 10px; padding: 5px;">
+            <option value="full">Full Backup</option>
+            <option value="incremental">Incremental Backup</option>
+          </select>
+        </div>
+        <div style="margin-bottom: 10px;">
+          <label for="restoreType">Restore Type:</label>
+          <select id="restoreType" style="margin-left: 10px; padding: 5px;">
+            <option value="full">Full Restore</option>
+            <option value="partial">Partial Restore</option>
+          </select>
+        </div>
+        <button onclick="triggerBackup()" id="backupButton" class="backup-btn">🔄 Start Backup</button>
+        <button onclick="restoreFiles()" id="restoreButton" class="restore-btn">📥 Start Restore</button>
+        <button onclick="checkBackupStatus()" class="backup-btn" style="background: #17a2b8;">📊 Backup Status</button>
       </div>
       <div id="backupStatus" class="backup-status"></div>
       <div id="filesList"></div>
@@ -325,20 +339,23 @@
         showAlert(err.message || 'Delete failed', 'error')
         console.error(err)
       }
-    }
-
-    // Trigger backup
+    }    // Trigger backup
     async function triggerBackup() {
       const backupButton = document.getElementById('backupButton')
       const backupStatus = document.getElementById('backupStatus')
+      const backupType = document.getElementById('backupType').value
       
       try {
         backupButton.disabled = true
         backupStatus.className = 'backup-status show loading'
-        backupStatus.textContent = '🔄 Starting backup process...'
+        backupStatus.textContent = `🔄 Starting ${backupType} backup process...`
         
         const response = await fetch('/api/backup', {
-          method: 'POST'
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ type: backupType })
         })
         
         const result = await response.json()
@@ -348,15 +365,22 @@
         }
         
         backupStatus.className = 'backup-status show success'
-        backupStatus.textContent = `✅ Backup completed successfully! Job ID: ${result.jobId || 'N/A'}`
+        backupStatus.innerHTML = `
+          ✅ ${result.backupType} backup completed successfully!<br>
+          📋 Job ID: ${result.jobId}<br>
+          📁 Files backed up: ${result.filesBackedUp}<br>
+          ⏱️ Duration: ${result.duration}<br>
+          📊 Throughput: ${result.throughput}<br>
+          💾 Total size: ${(result.totalSizeBackedUp / (1024*1024)).toFixed(2)} MB
+        `
         
         setTimeout(() => {
           backupStatus.className = 'backup-status'
-        }, 10000)
+        }, 15000)
         
       } catch (err) {
         backupStatus.className = 'backup-status show error'
-        backupStatus.textContent = `❌ Backup failed: ${err.message}`
+        backupStatus.textContent = `❌ ${backupType} backup failed: ${err.message}`
         console.error(err)
         
         setTimeout(() => {
@@ -369,7 +393,9 @@
 
     // Restore files
     async function restoreFiles() {
-      if (!confirm('This will restore all backed up files. Continue?')) {
+      const restoreType = document.getElementById('restoreType').value
+      
+      if (!confirm(`This will perform a ${restoreType} restore of backed up files. Continue?`)) {
         return
       }
       
@@ -379,12 +405,15 @@
       try {
         restoreButton.disabled = true
         backupStatus.className = 'backup-status show loading'
-        backupStatus.textContent = '📥 Restoring files from backup...'
+        backupStatus.textContent = `📥 Performing ${restoreType} restore from backup...`
         
         const response = await fetch('/api/restore', {
-          method: 'POST'
-        })
-        
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ type: restoreType })
+        })        
         const result = await response.json()
         
         if (!response.ok) {
@@ -392,17 +421,24 @@
         }
         
         backupStatus.className = 'backup-status show success'
-        backupStatus.textContent = `✅ Files restored successfully! ${result.filesRestored || 0} files restored.`
+        backupStatus.innerHTML = `
+          ✅ ${result.restoreType} restore completed successfully!<br>
+          📁 Files restored: ${result.filesRestored}<br>
+          ⏱️ Duration: ${result.duration}<br>
+          📊 Throughput: ${result.throughput}<br>
+          💾 Total size: ${(result.totalSizeRestored / (1024*1024)).toFixed(2)} MB<br>
+          📋 Available backups: ${result.availableBackups}
+        `
         
         // Reload files list to show restored files
         setTimeout(() => {
           loadFiles()
           backupStatus.className = 'backup-status'
-        }, 3000)
+        }, 15000)
         
       } catch (err) {
         backupStatus.className = 'backup-status show error'
-        backupStatus.textContent = `❌ Restore failed: ${err.message}`
+        backupStatus.textContent = `❌ ${restoreType} restore failed: ${err.message}`
         console.error(err)
         
         setTimeout(() => {
@@ -410,6 +446,45 @@
         }, 10000)
       } finally {
         restoreButton.disabled = false
+      }
+    }
+
+    // Check backup status
+    async function checkBackupStatus() {
+      const backupStatus = document.getElementById('backupStatus')
+      
+      try {
+        backupStatus.className = 'backup-status show loading'
+        backupStatus.textContent = '📊 Checking backup status...'
+        
+        const response = await fetch('/api/backup/status')
+        const result = await response.json()
+        
+        if (!response.ok) {
+          throw new Error('Failed to get backup status')
+        }
+        
+        backupStatus.className = 'backup-status show success'
+        backupStatus.innerHTML = `
+          📊 Backup System Status:<br>
+          💾 Total backups: ${result.totalBackups}<br>
+          📁 Backup files: ${result.backupFiles.length}<br>
+          🕐 Last checked: ${new Date(result.timestamp).toLocaleString()}<br>
+          📋 View metrics at: <a href="http://localhost:9090" target="_blank">Prometheus</a> | 
+          <a href="http://localhost:3001" target="_blank">Grafana</a>
+        `
+        
+        setTimeout(() => {
+          backupStatus.className = 'backup-status'
+        }, 15000)
+        
+      } catch (err) {
+        backupStatus.className = 'backup-status show error'
+        backupStatus.textContent = `❌ Failed to get backup status: ${err.message}`
+        
+        setTimeout(() => {
+          backupStatus.className = 'backup-status'
+        }, 10000)
       }
     }
 
